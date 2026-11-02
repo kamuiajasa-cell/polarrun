@@ -15,8 +15,11 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+<<<<<<< HEAD
         with:
           packages: ''   # default "tools platform-tools" bikin gagal: paket 'tools' sudah tidak ada
+=======
+>>>>>>> 0e49d45 (Fix PolarRun build)
       - run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
@@ -24,5 +27,5 @@ jobs:
       - run: gradle assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: PolarRun-debug-apk
+          name: PolarRun-APK
           path: app/build/outputs/apk/debug/app-debug.apk
