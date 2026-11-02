@@ -2,14 +2,11 @@ package com.polarrun.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.joyodigitama.huaweiwear.WatchData
 import com.joyodigitama.huaweiwear.WatchDataOverview
 import com.joyodigitama.huaweiwear.WatchDay
@@ -87,12 +85,12 @@ fun WatchDataScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("Data dari jam", style = MaterialTheme.typography.headlineSmall)
+        Eyebrow("Data dari jam")
         OutlinedButton(onClick = { tick++ }) { Text("Muat ulang") }
 
         val s = snap
         if (s == null) {
-            Text("Membaca…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Membaca…", color = Pal.Sub)
             return@Column
         }
 
@@ -178,19 +176,14 @@ fun WatchDataScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun Block(title: String, content: @Composable () -> Unit) {
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            content()
-        }
+private fun Block(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Panel {
+        Eyebrow(title)
+        content()
     }
 }
 
 @Composable
 private fun Line(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall)
+    Text(text, color = Pal.Text, fontSize = 13.sp)
 }

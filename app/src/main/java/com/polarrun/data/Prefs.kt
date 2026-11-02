@@ -40,7 +40,14 @@ data class Wellness(
     val atl: Double?
 )
 
-data class WeekStat(val week: String, val min: Int, val km: Double)
+data class ActivityRec(
+    val date: String,
+    val min: Int,
+    val km: Double,
+    val easySec: Int,
+    val modSec: Int,
+    val hardSec: Int
+)
 
 fun JSONObject.dbl(name: String): Double? =
     if (has(name) && !isNull(name)) getDouble(name) else null
@@ -151,17 +158,44 @@ class Prefs(ctx: Context) {
         sp.edit().putString("wellness", arr.toString()).apply()
     }
 
-    fun loadWeekStat(): WeekStat? {
-        val raw = sp.getString("weekstat", null) ?: return null
-        val o = JSONObject(raw)
-        return WeekStat(o.optString("week", ""), o.optInt("min", 0), o.optDouble("km", 0.0))
+    fun loadActivities(): List<ActivityRec> {
+        val raw = sp.getString("acts", null) ?: return emptyList()
+        val arr = JSONArray(raw)
+        return (0 until arr.length()).map {
+            val o = arr.getJSONObject(it)
+            ActivityRec(
+                o.optString("d", ""), o.optInt("m", 0), o.optDouble("k", 0.0),
+                o.optInt("e", 0), o.optInt("o", 0), o.optInt("h", 0)
+            )
+        }
     }
 
-    fun saveWeekStat(w: WeekStat) {
+    fun saveActivities(list: List<ActivityRec>) {
+        val arr = JSONArray()
+        for (a in list) {
+            val o = JSONObject()
+            o.put("d", a.date)
+            o.put("m", a.min)
+            o.put("k", a.km)
+            o.put("e", a.easySec)
+            o.put("o", a.modSec)
+            o.put("h", a.hardSec)
+            arr.put(o)
+        }
+        sp.edit().putString("acts", arr.toString()).apply()
+    }
+
+    fun loadScores(): Map<String, Int> {
+        val raw = sp.getString("scores", null) ?: return emptyMap()
+        val o = JSONObject(raw)
+        val out = HashMap<String, Int>()
+        for (k in o.keys()) out[k] = o.optInt(k, 0)
+        return out
+    }
+
+    fun saveScores(m: Map<String, Int>) {
         val o = JSONObject()
-        o.put("week", w.week)
-        o.put("min", w.min)
-        o.put("km", w.km)
-        sp.edit().putString("weekstat", o.toString()).apply()
+        for ((k, v) in m.toSortedMap().entries.toList().takeLast(60)) o.put(k, v)
+        sp.edit().putString("scores", o.toString()).apply()
     }
 }

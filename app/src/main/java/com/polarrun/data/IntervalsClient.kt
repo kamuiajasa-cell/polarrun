@@ -9,6 +9,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 data class PlanEvent(val date: String, val name: String, val description: String, val seconds: Int)
 
@@ -38,7 +39,7 @@ object IntervalsClient {
         return text
     }
 
-    suspend fun fetchWellness(id: String, key: String, days: Int = 14): List<Wellness> =
+    suspend fun fetchWellness(id: String, key: String, days: Int = 42): List<Wellness> =
         withContext(Dispatchers.IO) {
             val newest = LocalDate.now()
             val oldest = newest.minusDays(days.toLong())
@@ -53,21 +54,34 @@ object IntervalsClient {
             }
         }
 
-    suspend fun fetchWeekStat(id: String, key: String, monday: LocalDate): WeekStat =
+    // Zona HR: Z1-2 = easy, Z3 = sedang, Z4+ = keras (mengikuti zona HR di intervals.icu)
+    suspend fun fetchActivities(id: String, key: String, days: Int = 56): List<ActivityRec> =
         withContext(Dispatchers.IO) {
-            val sunday = monday.plusDays(6)
-            val txt = request("GET", "$BASE/$id/activities?oldest=$monday&newest=$sunday", key, null)
+            val newest = LocalDate.now()
+            val oldest = newest.minusDays(days.toLong())
+            val txt = request("GET", "$BASE/$id/activities?oldest=$oldest&newest=$newest", key, null)
             val arr = JSONArray(txt)
-            var sec = 0.0
-            var meters = 0.0
+            val out = ArrayList<ActivityRec>()
             for (i in 0 until arr.length()) {
                 val o = arr.getJSONObject(i)
-                if (o.optString("type", "").contains("Run")) {
-                    sec += o.optDouble("moving_time", 0.0)
-                    meters += o.optDouble("distance", 0.0)
+                if (!o.optString("type", "").contains("Run")) continue
+                val date = o.optString("start_date_local", "").take(10)
+                if (date.length != 10) continue
+                val min = (o.optDouble("moving_time", 0.0) / 60.0).roundToInt()
+                val km = o.optDouble("distance", 0.0) / 1000.0
+                var easy = 0
+                var mod = 0
+                var hard = 0
+                val z = o.optJSONArray("icu_hr_zone_times")
+                if (z != null) {
+                    for (k in 0 until z.length()) {
+                        val sec = z.optInt(k, 0)
+                        if (k <= 1) easy += sec else if (k == 2) mod += sec else hard += sec
+                    }
                 }
+                out.add(ActivityRec(date, min, km, easy, mod, hard))
             }
-            WeekStat(monday.toString(), (sec / 60).toInt(), meters / 1000.0)
+            out
         }
 
     // Hapus event lama berawalan "PolarRun" di rentang tanggal, lalu kirim ulang (tanpa duplikat)
