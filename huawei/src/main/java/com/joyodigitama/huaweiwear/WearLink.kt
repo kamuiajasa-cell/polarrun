@@ -771,13 +771,25 @@ internal class WearLink(
     }
   }
 
+  /** Manual night HRV pull over everything the watch holds; returns what the step reported. */
+  suspend fun syncHrvOnly(): NightHrvDiagnostics.Snapshot? {
+    val connection = requireConnected()
+    if (state == LinkState.SYNCING) {
+      throw WearException(ErrorCodes.BUSY, "A sync is already running")
+    }
+    return connection.operationLock.withLock {
+      syncNightHrv(connection, true)
+      NightHrvDiagnostics.last
+    }
+  }
+
   /**
    * Pulls sleep, steps and totals since the last stored sync (everything the watch holds on the first sync), commits
    * them to the shared database slice by slice and reports a summary (also as `onSyncComplete`). [fullHistory] pulls
    * everything again; stored rows upsert, so it only adds what is missing. Logs a `History:` summary with the oldest
    * stored timestamps (logcat tag `JoyoFit`) so the watch's real retention can be read off it.
    */
-  suspend fun syncActivity(fullHistory: Boolean = false): SyncSummary {
+  suspend fun syncActivity(fullHistory: Boolean = false, sinceDays: Int? = null): SyncSummary {
     val connection = requireConnected()
     if (state == LinkState.SYNCING) {
       throw WearException(ErrorCodes.BUSY, "A sync is already running")
@@ -795,8 +807,9 @@ internal class WearLink(
         val backfill = fullHistory || settings.switchBackfill.pending(connection.address)
         val last = settings.switchBackfill.windowBase(connection.address, fullHistory) { storage { syncStore.lastSync(connection.address) } }
         val nowSec = System.currentTimeMillis() / 1000
-        val slices = syncSlices(syncWindowStart(last), nowSec)
-        val kind = if (fullHistory) "full" else if (backfill) "backfill after a switch" else "incremental"
+        val windowStart = if (sinceDays != null && !fullHistory) nowSec - sinceDays * 86400L else syncWindowStart(last)
+        val slices = syncSlices(windowStart, nowSec)
+        val kind = if (sinceDays != null && !fullHistory) "last $sinceDays days" else if (fullHistory) "full" else if (backfill) "backfill after a switch" else "incremental"
         events.log(LogDirection.INFO, null, null, null, "History: $kind pull in ${slices.size} slices from ${slices.first().first}")
         var stored: SyncSummary? = null
         var samples = 0
@@ -826,12 +839,12 @@ internal class WearLink(
           activityError = e
         }
         if (activityError != null) {
-          syncWorkouts(connection, fullHistory)
+          syncWorkouts(connection, fullHistory, sinceDays)
           throw activityError
         }
         settings.switchBackfill.done(connection.address)
         val finalSlice = stored!!
-        val workoutsSynced = syncWorkouts(connection, fullHistory)
+        val workoutsSynced = syncWorkouts(connection, fullHistory, sinceDays)
         val summary = SyncSummary(
           from = slices.first().first,
           to = finalSlice.to,
@@ -908,12 +921,13 @@ internal class WearLink(
    * Workout sessions and their GPS tracks, after the activity data is stored. Whatever fails here is logged and
    * does not fail the sync: the steps, sleep and totals are already committed.
    */
-  private suspend fun syncWorkouts(connection: Connection, fullHistory: Boolean): Int {
+  private suspend fun syncWorkouts(connection: Connection, fullHistory: Boolean, sinceDays: Int? = null): Int {
     val workouts = WorkoutStore(syncStore, connection.address)
     val sync = WorkoutSync(connection.session, events)
     try {
       val now = (System.currentTimeMillis() / 1000).toInt()
-      sync.sync(workouts.syncStart(fullHistory), now, workouts)
+      val start = if (sinceDays != null && !fullHistory) now - sinceDays * 86400 else workouts.syncStart(fullHistory)
+      sync.sync(start, now, workouts)
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {

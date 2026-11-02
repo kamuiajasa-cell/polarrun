@@ -26,27 +26,7 @@ import com.polarrun.ui.PolarScheme
 import com.polarrun.ui.SettingsScreen
 import com.polarrun.ui.TodayScreen
 import com.polarrun.ui.WatchHubScreen
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
 
-<<<<<<< HEAD
-private val DarkScheme = darkColorScheme(
-    primary = Color(0xFF00F19F),
-    onPrimary = Color(0xFF00110A),
-    background = Color(0xFF0B0B0F),
-    onBackground = Color(0xFFF2F2F5),
-    surface = Color(0xFF16161C),
-    onSurface = Color(0xFFF2F2F5),
-    surfaceVariant = Color(0xFF1F1F27),
-    onSurfaceVariant = Color(0xFFB8B8C4)
-)
-=======
->>>>>>> 0c29034 (PolarRun v2 + data jam)
->>>>>>> 0e49d45 (Fix PolarRun build)
-
-=======
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,22 +71,8 @@ fun Root(st: AppState) {
             0 -> TodayScreen(st, m)
             1 -> PlanScreen(st, m)
             2 -> JournalScreen(st, m)
-<<<<<<< HEAD
             3 -> AnalysisScreen(st, m)
-            4 -> WatchHubScreen(m)
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-            3 -> WatchHubScreen(m)
-=======
-            3 -> AnalysisScreen(st, m)
-            4 -> WatchHubScreen(m)
->>>>>>> 0c29034 (PolarRun v2 + data jam)
-=======
-            3 -> AnalysisScreen(st, m)
-            4 -> WatchHubScreen(m)
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
->>>>>>> 0e49d45 (Fix PolarRun build)
+            4 -> WatchHubScreen(st, m)
             else -> SettingsScreen(st, m)
         }
     }

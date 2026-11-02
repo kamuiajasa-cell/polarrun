@@ -2,34 +2,11 @@ package com.polarrun.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-import androidx.compose.foundation.layout.ColumnScope
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-<<<<<<< HEAD
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-=======
->>>>>>> 0e49d45 (Fix PolarRun build)
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-<<<<<<< HEAD
-=======
->>>>>>> 0c29034 (PolarRun v2 + data jam)
-=======
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
->>>>>>> 0e49d45 (Fix PolarRun build)
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,23 +14,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-<<<<<<< HEAD
 import androidx.compose.ui.unit.sp
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-import androidx.compose.ui.unit.sp
->>>>>>> 0c29034 (PolarRun v2 + data jam)
-=======
-import androidx.compose.ui.unit.sp
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
->>>>>>> 0e49d45 (Fix PolarRun build)
+import com.polarrun.AppState
 import com.joyodigitama.huaweiwear.WatchData
 import com.joyodigitama.huaweiwear.WatchDataOverview
 import com.joyodigitama.huaweiwear.WatchDay
@@ -63,6 +31,7 @@ import com.joyodigitama.huaweiwear.WatchMetricStatus
 import com.joyodigitama.huaweiwear.WatchSleepNight
 import com.joyodigitama.huaweiwear.WatchWorkout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
@@ -102,11 +71,12 @@ private fun fmtHm(sec: Long): String = "${sec / 3600}j ${(sec % 3600) / 60}m"
 private fun fmtKm(m: Int): String = "%.1f km".format(m / 1000.0)
 
 @Composable
-fun WatchDataScreen(modifier: Modifier = Modifier) {
+fun WatchDataScreen(st: AppState, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
     val data = remember { WatchData(ctx) }
     var snap by remember { mutableStateOf<Snapshot?>(null) }
     var tick by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(tick) {
         snap = withContext(Dispatchers.IO) { load(data) }
@@ -119,36 +89,17 @@ fun WatchDataScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-<<<<<<< HEAD
         Eyebrow("Data dari jam")
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-        Text("Data dari jam", style = MaterialTheme.typography.headlineSmall)
-=======
-        Eyebrow("Data dari jam")
->>>>>>> 0c29034 (PolarRun v2 + data jam)
-=======
-        Eyebrow("Data dari jam")
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
->>>>>>> 0e49d45 (Fix PolarRun build)
         OutlinedButton(onClick = { tick++ }) { Text("Muat ulang") }
+        OutlinedButton(
+            enabled = !st.busy,
+            onClick = { scope.launch { st.pullWatch(); tick++ } }
+        ) { Text("Pakai data jam di aplikasi") }
+        if (st.status.isNotBlank()) Text(st.status, color = Pal.Sub, fontSize = 12.sp)
 
         val s = snap
         if (s == null) {
-<<<<<<< HEAD
             Text("Membaca…", color = Pal.Sub)
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Text("Membaca…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-=======
-            Text("Membaca…", color = Pal.Sub)
->>>>>>> 0c29034 (PolarRun v2 + data jam)
-=======
-            Text("Membaca…", color = Pal.Sub)
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
->>>>>>> 0e49d45 (Fix PolarRun build)
             return@Column
         }
 
@@ -234,50 +185,14 @@ fun WatchDataScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-private fun Block(title: String, content: @Composable () -> Unit) {
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            content()
-        }
-=======
-=======
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
->>>>>>> 0e49d45 (Fix PolarRun build)
 private fun Block(title: String, content: @Composable ColumnScope.() -> Unit) {
     Panel {
         Eyebrow(title)
         content()
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 0c29034 (PolarRun v2 + data jam)
-=======
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
->>>>>>> 0e49d45 (Fix PolarRun build)
     }
 }
 
 @Composable
 private fun Line(text: String) {
-<<<<<<< HEAD
     Text(text, color = Pal.Text, fontSize = 13.sp)
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-    Text(text, style = MaterialTheme.typography.bodySmall)
-=======
-    Text(text, color = Pal.Text, fontSize = 13.sp)
->>>>>>> 0c29034 (PolarRun v2 + data jam)
-=======
-    Text(text, color = Pal.Text, fontSize = 13.sp)
->>>>>>> dc5c7a9 (Fix PolarRun build and configure Android SDK)
->>>>>>> 0e49d45 (Fix PolarRun build)
 }

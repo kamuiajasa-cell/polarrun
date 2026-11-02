@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.joyodigitama.huaweiwear.HuaweiWatch
+import com.polarrun.AppState
 import com.joyodigitama.huaweiwear.WatchDevice
 import com.joyodigitama.huaweiwear.WatchException
 import kotlinx.coroutines.launch
@@ -65,7 +66,7 @@ private fun timeOf(sec: Long): String =
     TIME_FMT.format(Instant.ofEpochSecond(sec).atZone(ZoneId.systemDefault()))
 
 @Composable
-fun WatchScreen(modifier: Modifier = Modifier) {
+fun WatchScreen(st: AppState, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
     val watch = remember { HuaweiWatch.get(ctx) }
     val scope = rememberCoroutineScope()
@@ -166,26 +167,50 @@ fun WatchScreen(modifier: Modifier = Modifier) {
             }
         } else {
             val connected = state.link == "connected" || state.link == "syncing"
+            fun runOp(block: suspend () -> String) {
+                scope.launch {
+                    busy = true
+                    message = "Menyinkronkan…"
+                    try {
+                        message = block()
+                        st.pullWatch()
+                    } catch (e: Exception) {
+                        message = "Gagal sinkron: ${e.message}"
+                    } finally {
+                        busy = false
+                    }
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     enabled = connected && !busy,
                     onClick = {
-                        scope.launch {
-                            busy = true
-                            message = "Menyinkronkan…"
-                            try {
-                                val r = watch.sync()
-                                message = "Selesai: ${r.steps} langkah, ${r.workouts} latihan, ${r.sleep} data tidur, ${r.samples} sampel."
-                            } catch (e: Exception) {
-                                message = "Gagal sinkron: ${e.message}"
-                            } finally {
-                                busy = false
-                            }
+                        runOp {
+                            val r = watch.sync()
+                            "Selesai: ${r.steps} langkah, ${r.workouts} latihan, ${r.sleep} data tidur, ${r.samples} sampel."
                         }
                     }
                 ) { Text("Sinkron") }
-                OutlinedButton(enabled = connected, onClick = { watch.disconnect() }) { Text("Putuskan") }
+                OutlinedButton(
+                    enabled = connected && !busy,
+                    onClick = {
+                        runOp {
+                            val r = watch.sync(days = 7)
+                            "Selesai (7 hari): ${r.steps} langkah, ${r.workouts} latihan, ${r.sleep} data tidur, ${r.samples} sampel."
+                        }
+                    }
+                ) { Text("7 hari") }
+                OutlinedButton(
+                    enabled = connected && !busy,
+                    onClick = {
+                        runOp {
+                            val r = watch.syncHrv()
+                            "HRV: ${r.stored} malam tersimpan (${r.result})."
+                        }
+                    }
+                ) { Text("HRV") }
             }
+            OutlinedButton(enabled = connected, onClick = { watch.disconnect() }) { Text("Putuskan") }
 
             Text("Jam di HP ini", style = MaterialTheme.typography.titleSmall)
             if (bonded.isEmpty()) Text("Belum ada jam terpasang. Pasangkan lewat Bluetooth Android, atau cari di bawah.")

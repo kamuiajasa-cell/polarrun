@@ -23,6 +23,9 @@ data class WatchDevice(
   val remembered: Boolean,
 )
 
+/** Hasil tarik HRV manual. [stored] = jumlah malam yang disimpan, [result] = keterangan dari jam. */
+data class WatchHrvResult(val result: String, val stored: Int, val records: Int?)
+
 /** Status koneksi. [link]: disconnected, connecting, authenticating, initializing, connected, syncing. */
 data class WatchState(
   val link: String = "disconnected",
@@ -153,9 +156,15 @@ class HuaweiWatch private constructor(context: Context) {
   suspend fun refreshBattery(): Int = guard { runtime.link.refreshBattery() }
 
   /** Menarik data dari jam ke database `filesDir/SQLite/joyofit.db`. [full] = seluruh riwayat yang disimpan jam. */
-  suspend fun sync(full: Boolean = false): WatchSyncResult = guard {
-    val s = runtime.link.syncActivity(fullHistory = full)
+  suspend fun sync(full: Boolean = false, days: Int? = null): WatchSyncResult = guard {
+    val s = runtime.link.syncActivity(fullHistory = full, sinceDays = days)
     WatchSyncResult(s.from, s.to, s.samples, s.sleep, s.totalSteps, s.totalCalories, s.totalDistance, s.workouts)
+  }
+
+  /** Tarik HRV malam secara manual dari seluruh riwayat stres yang disimpan jam. */
+  suspend fun syncHrv(): WatchHrvResult = guard {
+    val d = runtime.link.syncHrvOnly()
+    if (d == null) WatchHrvResult("tidak ada keterangan", 0, null) else WatchHrvResult(d.result, d.stored, d.records)
   }
 
   fun forget(address: String) {

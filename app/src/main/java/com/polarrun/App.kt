@@ -10,12 +10,16 @@ import com.polarrun.data.Journal
 import com.polarrun.data.PlanEvent
 import com.polarrun.data.Prefs
 import com.polarrun.data.Settings
+import com.polarrun.data.WatchBridge
 import com.polarrun.data.Wellness
 import com.polarrun.engine.Planner
 import com.polarrun.engine.Readiness
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 class AppState(ctx: Context) {
+    private val appCtx = ctx.applicationContext
     private val prefs = Prefs(ctx)
 
     var settings by mutableStateOf(prefs.loadSettings())
@@ -56,7 +60,9 @@ class AppState(ctx: Context) {
         val s = settings
         busy = true
         try {
-            val w = IntervalsClient.fetchWellness(s.athleteId.trim(), s.apiKey.trim())
+            val fetched = IntervalsClient.fetchWellness(s.athleteId.trim(), s.apiKey.trim())
+            val fromWatch = withContext(Dispatchers.IO) { WatchBridge.wellness(appCtx) }
+            val w = WatchBridge.merge(fetched, fromWatch)
             wellness = w
             prefs.saveWellness(w)
             val a = IntervalsClient.fetchActivities(s.athleteId.trim(), s.apiKey.trim())
@@ -65,6 +71,29 @@ class AppState(ctx: Context) {
             status = "Sinkron intervals.icu berhasil (${w.size} hari wellness, ${a.size} lari)."
         } catch (e: Exception) {
             status = "Gagal sinkron: ${e.message}"
+        } finally {
+            busy = false
+        }
+    }
+
+    /** Baca data jam (HRV, HR istirahat, tidur) dari database hasil sinkron dan pakai untuk skor kesiapan. */
+    suspend fun pullWatch(): Int {
+        busy = true
+        try {
+            val fresh = withContext(Dispatchers.IO) { WatchBridge.wellness(appCtx) }
+            if (fresh.isEmpty()) {
+                status = "Belum ada data jam. Sinkronkan jam dulu."
+                return 0
+            }
+            val merged = WatchBridge.merge(wellness, fresh).takeLast(60)
+            wellness = merged
+            prefs.saveWellness(merged)
+            val h = fresh.count { it.hrv != null }
+            status = "Data jam dipakai: ${fresh.size} hari (HRV $h hari, tidur ${fresh.count { it.sleepSec != null }} hari)."
+            return fresh.size
+        } catch (e: Exception) {
+            status = "Gagal membaca data jam: ${e.message}"
+            return 0
         } finally {
             busy = false
         }
