@@ -7,7 +7,7 @@ plugins {
 // di folder ini). Lapisan Expo/React Native dibuang; database memakai SQLite bawaan Android.
 android {
     namespace = "com.joyodigitama.huaweiwear"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 29
