@@ -145,7 +145,7 @@ private class AndroidSqlStatement(
       }
       SQLiteCursor(driver, editTable, query)
     }
-    return db.rawQueryWithFactory(factory, sql, null, null).also { cursor = it }
+    return db.rawQueryWithFactory(factory, sql, null, "").also { cursor = it }
   }
 
   override fun columnCount(): Int = if (isQuery) ensureCursor().columnCount else 0
