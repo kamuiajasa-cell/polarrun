@@ -21,7 +21,7 @@ import com.polarrun.ui.JournalScreen
 import com.polarrun.ui.PlanScreen
 import com.polarrun.ui.SettingsScreen
 import com.polarrun.ui.TodayScreen
-import com.polarrun.ui.WatchScreen
+import com.polarrun.ui.WatchHubScreen
 
 private val DarkScheme = darkColorScheme(
     primary = Color(0xFF00F19F),
@@ -70,7 +70,7 @@ fun Root(st: AppState) {
             0 -> TodayScreen(st, m)
             1 -> PlanScreen(st, m)
             2 -> JournalScreen(st, m)
-            3 -> WatchScreen(m)
+            3 -> WatchHubScreen(m)
             else -> SettingsScreen(st, m)
         }
     }
