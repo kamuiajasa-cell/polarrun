@@ -16,8 +16,21 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("fixed") {
+            storeFile = file("polarrun.keystore")
+            storePassword = "polarrun123"
+            keyAlias = "polarrun"
+            keyPassword = "polarrun123"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("fixed")
+        }
         release {
+            signingConfig = signingConfigs.getByName("fixed")
             isMinifyEnabled = false
         }
     }
