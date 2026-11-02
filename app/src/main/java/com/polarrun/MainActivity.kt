@@ -21,6 +21,7 @@ import com.polarrun.ui.JournalScreen
 import com.polarrun.ui.PlanScreen
 import com.polarrun.ui.SettingsScreen
 import com.polarrun.ui.TodayScreen
+import com.polarrun.ui.WatchScreen
 
 private val DarkScheme = darkColorScheme(
     primary = Color(0xFF00F19F),
@@ -48,8 +49,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Root(st: AppState) {
     var tab by remember { mutableIntStateOf(0) }
-    val labels = listOf("Hari Ini", "Rencana", "Jurnal", "Setelan")
-    val marks = listOf("●", "▤", "✎", "⚙")
+    val labels = listOf("Hari Ini", "Rencana", "Jurnal", "Jam", "Setelan")
+    val marks = listOf("●", "▤", "✎", "⌚", "⚙")
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -69,6 +70,7 @@ fun Root(st: AppState) {
             0 -> TodayScreen(st, m)
             1 -> PlanScreen(st, m)
             2 -> JournalScreen(st, m)
+            3 -> WatchScreen(m)
             else -> SettingsScreen(st, m)
         }
     }
